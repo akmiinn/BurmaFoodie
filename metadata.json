@@ -1,0 +1,5 @@
+{
+  "name": "BurmaFoodie",
+  "description": "An AI-powered app to get recipes for Burmese dishes. Get ingredients, instructions, and calorie counts by typing a dish name or uploading a photo. Supports English and Burmese.",
+  "requestFramePermissions": []
+}
