@@ -68,19 +68,19 @@ export default async function handler(request: Request) {
   try {
     const { prompt, imageBase64 } = await request.json();
 
-    const contents: any[] = [];
-    const textPart = { text: prompt };
-
+    let contentForAI;
+        
     if (imageBase64) {
       const imagePart = base64ToGenerativePart(imageBase64.split(',')[1], imageBase64.split(';')[0].split(':')[1]);
-      contents.push(imagePart, textPart);
+      const textPart = { text: prompt };
+      contentForAI = { parts: [imagePart, textPart] };
     } else {
-      contents.push(textPart);
+      contentForAI = prompt;
     }
     
     const response: GenerateContentResponse = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-04-17",
-        contents: { parts: contents },
+        contents: contentForAI,
         config: {
           systemInstruction: systemInstruction,
           responseMimeType: "application/json",
