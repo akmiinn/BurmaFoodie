@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Analytics } from '@vercel/analytics/react'; // 1. เพิ่มบรรทัดนี้
 import { ChatMessage as ChatMessageType, Recipe } from './types';
 import { getRecipeForDish } from './services/geminiService';
 import ChatInput from './components/ChatInput';
@@ -78,6 +79,7 @@ const App: React.FC = () => {
 
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-200 text-black min-h-screen flex flex-col font-sans">
+      <Analytics /> {/* 2. เพิ่มคอมโพเนนต์ Analytics ที่นี่ */}
       <header className="fixed top-0 left-0 right-0 bg-white/70 backdrop-blur-lg z-10 border-b border-black/10">
         <div className="max-w-3xl mx-auto px-4 py-3">
           <div className="flex items-center space-x-3">
