@@ -1,2 +1,15 @@
 {
+  "routes": [
+    {
+      "src": "/api/getRecipe",
+      "dest": "/api/getRecipe"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
 }
