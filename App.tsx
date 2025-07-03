@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChatMessage as ChatMessageType, Recipe } from './types';
+import { ChatMessage as ChatMessageType, GeminiResponse } from './types';
 import { getRecipeForDish } from './services/geminiService';
 import ChatInput from './components/ChatInput';
 import ChatMessage from './components/ChatMessage';
@@ -10,8 +10,10 @@ const useChatHistory = () => {
   const [chatHistory, setChatHistory] = useState<ChatMessageType[]>(() => {
     try {
       const savedHistory = localStorage.getItem('chatHistory');
-      // We don't save images to local storage, so no need to parse them.
-      return savedHistory ? JSON.parse(savedHistory) : [];
+      if (!savedHistory) return [];
+      // We don't save images to local storage, so filter them out on load.
+      const parsed = JSON.parse(savedHistory);
+      return parsed.map((msg: ChatMessageType) => ({...msg, image: undefined}));
     } catch (error) {
       console.error("Failed to parse chat history from localStorage", error);
       return [];
@@ -62,43 +64,19 @@ const App: React.FC = () => {
     const modelLoadingMessage: ChatMessageType = {
       id: `model-loading-${Date.now()}`,
       role: 'model',
-      text: '',
       isLoading: true
     };
 
-    // Add user message and loading indicator immediately
     setChatHistory(prev => [...prev, userMessage, modelLoadingMessage]);
     
     try {
-      let prompt;
-      if (imageBase64) {
-        prompt = inputText.trim() 
-          ? `The user has provided an image and the following text: "${inputText}". Please respond in the language of the user's text.`
-          : "Analyze the attached image and provide the recipe for the Burmese dish shown. Respond in English unless the image contains Burmese text.";
-      } else {
-        prompt = `Provide the recipe for: ${inputText}`;
-      }
+      const result: GeminiResponse = await getRecipeForDish(inputText, imageBase64);
 
-      const result = await getRecipeForDish(prompt, imageBase64);
-
-      let finalModelMessage: ChatMessageType;
-      const modelMessageId = `model-response-${Date.now()}`;
-
-      if ('error' in result) {
-         finalModelMessage = {
-            id: modelMessageId,
-            role: 'model',
-            text: result.error,
-            error: result.error
-         };
-      } else { // Assumes a valid Recipe object
-        finalModelMessage = {
-            id: modelMessageId,
-            role: 'model',
-            text: `Here is the recipe for ${result.dishName}.`,
-            recipe: result as Recipe
-        };
-      }
+      const finalModelMessage: ChatMessageType = {
+          id: `model-response-${Date.now()}`,
+          role: 'model',
+          content: result,
+      };
       
       // Replace the loading message with the final response
       setChatHistory(prev => [
@@ -111,8 +89,10 @@ const App: React.FC = () => {
         const errorResponse: ChatMessageType = {
             id: `model-error-${Date.now()}`,
             role: 'model',
-            text: `Sorry, something went wrong: ${errorMessage}`,
-            error: errorMessage,
+            content: {
+                responseType: 'error',
+                error: `Sorry, something went wrong: ${errorMessage}`
+            },
         };
         // Replace the loading message with an error message
         setChatHistory(prev => [
@@ -157,7 +137,7 @@ const App: React.FC = () => {
            {chatHistory.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center text-gray-600 animate-fadeInUp">
                 <p className="text-lg">Welcome to BurmaFoodie!</p>
-                <p className="mt-2 text-sm max-w-sm">Type a Burmese dish name (e.g., "မုန့်ဟင်းခါး" or "Mohinga") or upload a photo to get a recipe.</p>
+                <p className="mt-2 text-sm max-w-md">You can ask me for a Burmese recipe, or give me a list of ingredients (e.g., "chicken, onion, garlic") to see what you can make!</p>
             </div>
            )}
           <div className="space-y-6">
