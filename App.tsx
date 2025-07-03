@@ -35,7 +35,7 @@ const App: React.FC = () => {
     });
     localStorage.setItem('chatHistory', JSON.stringify(historyToSave));
   }, [chatHistory]);
-  
+
   const handleSendMessage = useCallback(async (inputText: string, imageBase64: string | null) => {
     if (!inputText.trim() && !imageBase64) return;
     setIsLoading(true);
@@ -47,7 +47,7 @@ const App: React.FC = () => {
       text: inputText,
       image: imageBase64 || undefined,
     };
-    
+
     setChatHistory(prev => [...prev, userMessage]);
 
     const modelLoadingMessageId = (Date.now() + 1).toString();
@@ -69,12 +69,19 @@ const App: React.FC = () => {
     } else {
       prompt = `Provide the recipe for: ${inputText}`;
     }
-    
+
     const result = await getRecipeForDish(prompt, imageBase64);
 
     let finalModelMessage: ChatMessageType;
 
-    if ('error' in result) {
+    if ('greeting' in result) {
+      finalModelMessage = {
+        id: modelLoadingMessageId,
+        role: 'model',
+        text: result.greeting,
+        greeting: result.greeting
+      };
+    } else if ('error' in result) {
        finalModelMessage = {
           id: modelLoadingMessageId,
           role: 'model',
@@ -111,7 +118,7 @@ const App: React.FC = () => {
               </h1>
             </div>
             {chatHistory.length > 0 && (
-              <button 
+              <button
                 onClick={handleClearHistory}
                 className="text-xs text-gray-500 hover:text-red-600 transition-colors px-3 py-1 rounded-md bg-gray-200/50 hover:bg-red-100/80"
                 title="Clear chat history"
@@ -122,13 +129,13 @@ const App: React.FC = () => {
           </div>
         </div>
       </header>
-      
+
       <main className="flex-1 flex flex-col pt-24 pb-32 md:pb-36">
         <div className="max-w-3xl w-full mx-auto px-4 flex-1 overflow-y-auto">
            {chatHistory.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center text-gray-600 animate-fadeInUp">
                 <p className="text-lg">Welcome to BurmaFoodie!</p>
-                <p className="mt-2 text-sm max-w-sm">Type a Burmese dish name (e.g., "မုန့်ဟင်းခါး" or "Mohinga") or upload a photo to get a recipe.</p>
+                <p className="mt-2 text-sm max-w-sm">Type a Burmese dish name (e.g., "မုန့်ဟင်းခါး" or "Mohinga") or upload a photo to get a recipe.</p>
             </div>
            )}
           <div className="space-y-6">
