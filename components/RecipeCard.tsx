@@ -39,7 +39,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
             {recipe.instructions.map((step, index) => (
               <li key={index}>{step}</li>
             ))}
-          ol>
+          </ol>  {/* <--- แก้ไขจาก ol> เป็น </ol> เรียบร้อยแล้ว */}
         </div>
       </div>
     </div>
