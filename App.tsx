@@ -6,7 +6,16 @@ import ChatMessage from './components/ChatMessage';
 import { LogoIcon } from './components/icons';
 
 const App: React.FC = () => {
-  const [chatHistory, setChatHistory] = useState<ChatMessageType[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatMessageType[]>(() => {
+    try {
+      const savedHistory = localStorage.getItem('chatHistory');
+      return savedHistory ? JSON.parse(savedHistory) : [];
+    } catch (error) {
+      console.error("Failed to parse chat history", error);
+      return [];
+    }
+  });
+
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -16,6 +25,15 @@ const App: React.FC = () => {
 
   useEffect(() => {
     scrollToBottom();
+  }, [chatHistory]);
+
+  useEffect(() => {
+    // สร้าง history สำหรับบันทึกโดยไม่รวมข้อมูลรูปภาพ (base64) เพื่อประหยัดพื้นที่
+    const historyToSave = chatHistory.map(msg => {
+      const { image, ...rest } = msg;
+      return rest;
+    });
+    localStorage.setItem('chatHistory', JSON.stringify(historyToSave));
   }, [chatHistory]);
   
   const handleSendMessage = useCallback(async (inputText: string, imageBase64: string | null) => {
@@ -76,15 +94,31 @@ const App: React.FC = () => {
     setIsLoading(false);
   }, []);
 
+  const handleClearHistory = () => {
+    setChatHistory([]);
+    localStorage.removeItem('chatHistory');
+  };
+
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-200 text-black min-h-screen flex flex-col font-sans">
       <header className="fixed top-0 left-0 right-0 bg-white/70 backdrop-blur-lg z-10 border-b border-black/10">
         <div className="max-w-3xl mx-auto px-4 py-3">
-          <div className="flex items-center space-x-3">
-            <LogoIcon className="w-8 h-8" />
-            <h1 className="text-2xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-black to-gray-700">
-              BurmaFoodie
-            </h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <LogoIcon className="w-8 h-8" />
+              <h1 className="text-2xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-black to-gray-700">
+                BurmaFoodie
+              </h1>
+            </div>
+            {chatHistory.length > 0 && (
+              <button 
+                onClick={handleClearHistory}
+                className="text-xs text-gray-500 hover:text-red-600 transition-colors px-3 py-1 rounded-md bg-gray-200/50 hover:bg-red-100/80"
+                title="Clear chat history"
+              >
+                Clear History
+              </button>
+            )}
           </div>
         </div>
       </header>
