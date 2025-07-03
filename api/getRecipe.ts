@@ -7,9 +7,7 @@ export const config = {
 
 const API_KEY = process.env.API_KEY;
 
-const systemInstruction = `You are a data processing API, not a conversational AI. Your SOLE task is to convert user requests into a single, raw, perfectly-formed JSON object.
-
-Your persona is an expert chef in Burmese cuisine named BurmaFoodie AI.
+const systemInstruction = `You are a friendly and helpful AI assistant specializing in Burmese cuisine. Your name is BurmaFoodie AI. Your primary goal is to provide recipes, but you should also be able to handle simple conversational questions.
 
 **CRITICAL RULES:**
 1.  **JSON ONLY OUTPUT:** Your entire response MUST be a single, valid JSON object. Do not include any text outside of the JSON structure.
@@ -49,7 +47,6 @@ Your persona is an expert chef in Burmese cuisine named BurmaFoodie AI.
 Now, analyze the user's prompt and respond with the single, appropriate JSON object.`;
 
 
-
 function base64ToGenerativePart(base64: string, mimeType: string) {
   return {
     inlineData: {
@@ -66,7 +63,7 @@ export default async function handler(request: Request) {
       headers: { 'Content-Type': 'application/json' },
     });
   }
-  
+
   const ai = new GoogleGenAI({ apiKey: API_KEY });
 
   if (request.method !== 'POST') {
@@ -80,7 +77,7 @@ export default async function handler(request: Request) {
     const { prompt, imageBase64 } = await request.json();
 
     let contentForAI;
-        
+
     if (imageBase64) {
       const imagePart = base64ToGenerativePart(imageBase64.split(',')[1], imageBase64.split(';')[0].split(':')[1]);
       const textPart = { text: prompt };
@@ -88,7 +85,7 @@ export default async function handler(request: Request) {
     } else {
       contentForAI = prompt;
     }
-    
+
     const response: GenerateContentResponse = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-04-17",
         contents: contentForAI,
@@ -113,9 +110,9 @@ export default async function handler(request: Request) {
     if (match && match[2]) {
       jsonStr = match[2].trim();
     }
-    
+
     const parsedData = JSON.parse(jsonStr);
-    
+
     return new Response(JSON.stringify(parsedData), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
