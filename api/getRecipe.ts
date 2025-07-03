@@ -1,9 +1,16 @@
 import { GoogleGenAI } from "@google/genai";
 
-// This is a Vercel Edge Function
+// Vercel Edge Function configuration
 export const config = {
   runtime: 'edge',
 };
+
+// --- Debugging Start ---
+// This log will appear in your Vercel Function Logs.
+// It helps you verify if the environment variable is loaded.
+console.log("Is API_KEY set on server?", !!process.env.API_KEY);
+// --- Debugging End ---
+
 
 // Securely access the API key from server environment variables
 const API_KEY = process.env.API_KEY;
@@ -27,11 +34,11 @@ export default async function handler(request: Request) {
     });
   }
 
-  // **CRITICAL FIX**: Check if the API key is actually available.
-  // This is the root cause of the error you're seeing.
+  // **CRITICAL FIX**: This check is the most important part.
+  // If the key is missing, it provides a clear server-side error.
   if (!API_KEY) {
-    console.error("Server Configuration Error: API_KEY is not set in the environment variables.");
-    return new Response(JSON.stringify({ error: "The server is not configured correctly. Please contact the administrator." }), {
+    console.error("Server Configuration Error: API_KEY is missing or not accessible in the Vercel environment.");
+    return new Response(JSON.stringify({ error: "The server is not configured correctly. The API key is missing." }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
     });
@@ -40,7 +47,6 @@ export default async function handler(request: Request) {
   try {
     const { prompt, imageBase64 } = await request.json();
 
-    // The GoogleGenAI constructor requires the API Key.
     const genAI = new GoogleGenAI(API_KEY);
     const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
@@ -55,7 +61,7 @@ export default async function handler(request: Request) {
     if (imageBase64) {
       const mimeTypeMatch = imageBase64.match(/^data:(.+);base64,/);
       if (!mimeTypeMatch) {
-          return new Response(JSON.stringify({ error: "Invalid image format. Could not determine MIME type." }), {
+          return new Response(JSON.stringify({ error: "Invalid image format." }), {
               status: 400,
               headers: { 'Content-Type': 'application/json' },
           });
@@ -75,7 +81,6 @@ export default async function handler(request: Request) {
     const response = result.response;
     const responseText = response.text();
     
-    // The response is already configured to be JSON
     const parsedData = JSON.parse(responseText);
     
     return new Response(JSON.stringify(parsedData), {
@@ -86,7 +91,7 @@ export default async function handler(request: Request) {
   } catch (e) {
     const error = e instanceof Error ? e : new Error('An unknown error occurred');
     console.error("Vercel Function Runtime Error:", error);
-    return new Response(JSON.stringify({ error: `Sorry, the server encountered an error: ${error.message}` }), {
+    return new Response(JSON.stringify({ error: `Server runtime error: ${error.message}` }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
     });
