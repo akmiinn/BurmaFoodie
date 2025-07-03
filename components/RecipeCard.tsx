@@ -1,6 +1,4 @@
-// components/RecipeCard.tsx
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { Recipe } from '../types';
 
 interface RecipeCardProps {
@@ -8,8 +6,6 @@ interface RecipeCardProps {
 }
 
 const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
-  const { t } = useTranslation();
-
   return (
     <div className="bg-white/60 backdrop-blur-md border border-gray-200/80 rounded-2xl shadow-xl shadow-gray-300/50 overflow-hidden">
       
@@ -22,7 +18,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
 
       <div className="relative px-5 pb-5 space-y-5">
         <div>
-          <h4 className="font-semibold text-lg text-gray-800 mb-3 border-b border-gray-300 pb-2">{t('ingredients')}</h4>
+          <h4 className="font-semibold text-lg text-gray-800 mb-3 border-b border-gray-300 pb-2">Ingredients</h4>
           <ul className="space-y-1.5 text-gray-700">
             {recipe.ingredients.map((ing, index) => (
               <li key={index} className="flex justify-between items-center text-sm">
@@ -34,12 +30,12 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
         </div>
 
         <div>
-          <h4 className="font-semibold text-lg text-gray-800 mb-3 border-b border-gray-300 pb-2">{t('instructions')}</h4>
+          <h4 className="font-semibold text-lg text-gray-800 mb-3 border-b border-gray-300 pb-2">Instructions</h4>
           <ol className="list-decimal list-inside space-y-3 text-gray-700 text-sm leading-relaxed">
             {recipe.instructions.map((step, index) => (
               <li key={index}>{step}</li>
             ))}
-          </ol>  {/* <--- แก้ไขจาก ol> เป็น </ol> เรียบร้อยแล้ว */}
+          </ol>
         </div>
       </div>
     </div>

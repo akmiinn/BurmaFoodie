@@ -8,27 +8,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Myanmar:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
-    
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
-
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta name="theme-color" content="#ffffff">
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-      /* กำหนดฟอนต์หลักและฟอนต์สำรอง */
       body {
-        font-family: 'Inter', 'Sarabun', 'Noto Sans SC', 'Noto Sans Myanmar', sans-serif;
+        font-family: 'Inter', sans-serif;
       }
-
-      /* กำหนดฟอนต์เฉพาะสำหรับแต่ละภาษาเพื่อให้แน่ใจว่าแสดงผลถูกต้อง */
-      html:lang(th) body { font-family: 'Sarabun', sans-serif; }
-      html:lang(my) body { font-family: 'Noto Sans Myanmar', sans-serif; }
-      html:lang(zh) body { font-family: 'Noto Sans SC', sans-serif; }
-
       ::-webkit-scrollbar {
         width: 8px;
       }
@@ -82,7 +73,8 @@
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
 
-    
+    <!-- ===== START: Footer Section ===== -->
+    <!-- This is initially hidden and will be moved by the script below -->
     <footer id="app-footer" class="text-center pb-2 pt-2 text-xs text-gray-400" style="display: none;">
       <p>Copyright © 2025 BurmaFoodie. All Rights Reserved.</p>
       <p class="mt-1">Created by Aung Kyaw Min & Theerapat Pongthai</p>
@@ -90,28 +82,41 @@
     </footer>
 
     <script>
-      const chatContainerSelector = 'main';
+      // This script waits for your React app to load the chat container
+      // and then moves the footer into it.
+
+      // --- IMPORTANT ---
+      // You need to find the correct selector for your main chat container.
+      // This is likely the element that holds both the messages list and the input bar.
+      // Right-click on your chat app and "Inspect" to find a good ID or class.
+      const chatContainerSelector = 'main'; // <-- **** CHANGE THIS **** common examples: 'main', '#chat-app', '.chat-wrapper'
 
       const observer = new MutationObserver((mutationsList, obs) => {
         const chatContainer = document.querySelector(chatContainerSelector);
         if (chatContainer) {
           const footer = document.getElementById('app-footer');
           if (footer) {
-            const inputFormContainer = document.querySelector('footer.fixed'); // find the container of chat input
-            if(inputFormContainer) {
-              inputFormContainer.appendChild(footer);
+            // Find the form/input area to insert the footer before it
+            const inputForm = chatContainer.querySelector('form');
+            if (inputForm) {
+                 chatContainer.insertBefore(footer, inputForm);
+            } else {
+                 // Fallback: just append to the end of the container
+                 chatContainer.appendChild(footer);
             }
-            footer.style.display = 'block'; 
+            footer.style.display = 'block'; // Make the footer visible
           }
-          obs.disconnect(); 
+          obs.disconnect(); // Stop observing once we've found the container
         }
       });
 
-
+      // Start observing the #root element for when React adds content
       observer.observe(document.getElementById('root'), {
         childList: true,
         subtree: true
       });
     </script>
-    </body>
+    <!-- ===== END: Footer Section ===== -->
+
+  </body>
 </html>

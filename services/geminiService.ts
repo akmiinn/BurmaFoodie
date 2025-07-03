@@ -1,14 +1,13 @@
-// services/geminiService.ts
 import { GeminiResponse } from '../types';
 
-export async function getRecipeForDish(prompt: string, imageBase64: string | null, language: string): Promise<GeminiResponse> {
+export async function getRecipeForDish(prompt: string, imageBase64?: string | null): Promise<GeminiResponse> {
   try {
     const response = await fetch('/api/getRecipe', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ prompt, imageBase64, language }),
+      body: JSON.stringify({ prompt, imageBase64 }),
     });
 
     if (!response.ok) {

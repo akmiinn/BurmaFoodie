@@ -1,6 +1,4 @@
-// App.tsx
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { ChatMessage as ChatMessageType, Recipe } from './types';
 import { getRecipeForDish } from './services/geminiService';
 import ChatInput from './components/ChatInput';
@@ -8,8 +6,6 @@ import ChatMessage from './components/ChatMessage';
 import { LogoIcon } from './components/icons';
 
 const App: React.FC = () => {
-  const { t, i18n } = useTranslation();
-
   const [chatHistory, setChatHistory] = useState<ChatMessageType[]>(() => {
     try {
       const savedHistory = localStorage.getItem('chatHistory');
@@ -32,6 +28,7 @@ const App: React.FC = () => {
   }, [chatHistory]);
 
   useEffect(() => {
+    // สร้าง history สำหรับบันทึกโดยไม่รวมข้อมูลรูปภาพ (base64) เพื่อประหยัดพื้นที่
     const historyToSave = chatHistory.map(msg => {
       const { image, ...rest } = msg;
       return rest;
@@ -65,15 +62,15 @@ const App: React.FC = () => {
     let prompt;
     if (imageBase64) {
       if (inputText.trim()) {
-        prompt = `The user has provided an image and the following text: "${inputText}". Identify the Burmese dish and provide its recipe. The user's text is the primary instruction, and the image provides context. Please respond in the language with code '${i18n.language}'.`;
+        prompt = `The user has provided an image and the following text: "${inputText}". Identify the Burmese dish and provide its recipe. The user's text is the primary instruction, and the image provides context. Please respond in the language of the user's text.`;
       } else {
-        prompt = `Analyze the attached image and provide the recipe for the Burmese dish shown. Respond in the language with code '${i18n.language}'.`;
+        prompt = "Analyze the attached image and provide the recipe for the Burmese dish shown. Identify the language from any visible text or typical context and respond in that language (Burmese or English).";
       }
     } else {
       prompt = `Provide the recipe for: ${inputText}`;
     }
     
-    const result = await getRecipeForDish(prompt, imageBase64, i18n.language);
+    const result = await getRecipeForDish(prompt, imageBase64);
 
     let finalModelMessage: ChatMessageType;
 
@@ -88,14 +85,14 @@ const App: React.FC = () => {
       finalModelMessage = {
           id: modelLoadingMessageId,
           role: 'model',
-          text: t('recipe_for', { dishName: result.dishName }),
+          text: `Here is the recipe for ${result.dishName}.`,
           recipe: result as Recipe
       };
     }
 
     setChatHistory(prev => prev.map(msg => msg.id === modelLoadingMessageId ? finalModelMessage : msg));
     setIsLoading(false);
-  }, [t, i18n.language]);
+  }, []);
 
   const handleClearHistory = () => {
     setChatHistory([]);
@@ -110,25 +107,18 @@ const App: React.FC = () => {
             <div className="flex items-center space-x-3">
               <LogoIcon className="w-8 h-8" />
               <h1 className="text-2xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-black to-gray-700">
-                {t('header_title')}
+                BurmaFoodie
               </h1>
             </div>
-            <div className='flex items-center space-x-2 md:space-x-3'>
-              <button onClick={() => i18n.changeLanguage('en')} disabled={i18n.language.startsWith('en')} className="text-sm font-bold disabled:opacity-100 disabled:underline hover:text-gray-600 transition-colors">EN</button>
-              <button onClick={() => i18n.changeLanguage('th')} disabled={i18n.language.startsWith('th')} className="text-sm font-bold disabled:opacity-100 disabled:underline hover:text-gray-600 transition-colors">TH</button>
-              <button onClick={() => i18n.changeLanguage('my')} disabled={i18n.language.startsWith('my')} className="text-sm font-bold disabled:opacity-100 disabled:underline hover:text-gray-600 transition-colors">MY</button>
-              <button onClick={() => i18n.changeLanguage('zh')} disabled={i18n.language.startsWith('zh')} className="text-sm font-bold disabled:opacity-100 disabled:underline hover:text-gray-600 transition-colors">ZH</button>
-              
-              {chatHistory.length > 0 && (
-                <button 
-                  onClick={handleClearHistory}
-                  className="ml-2 text-xs text-gray-500 hover:text-red-600 transition-colors px-3 py-1 rounded-md bg-gray-200/50 hover:bg-red-100/80"
-                  title={t('clear_history')}
-                >
-                  {t('clear_history')}
-                </button>
-              )}
-            </div>
+            {chatHistory.length > 0 && (
+              <button 
+                onClick={handleClearHistory}
+                className="text-xs text-gray-500 hover:text-red-600 transition-colors px-3 py-1 rounded-md bg-gray-200/50 hover:bg-red-100/80"
+                title="Clear chat history"
+              >
+                Clear History
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -137,8 +127,8 @@ const App: React.FC = () => {
         <div className="max-w-3xl w-full mx-auto px-4 flex-1 overflow-y-auto">
            {chatHistory.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center text-gray-600 animate-fadeInUp">
-                <p className="text-lg">{t('welcome_title')}</p>
-                <p className="mt-2 text-sm max-w-sm">{t('welcome_subtitle')}</p>
+                <p className="text-lg">Welcome to BurmaFoodie!</p>
+                <p className="mt-2 text-sm max-w-sm">Type a Burmese dish name (e.g., "မုန့်ဟင်းခါး" or "Mohinga") or upload a photo to get a recipe.</p>
             </div>
            )}
           <div className="space-y-6">

@@ -1,6 +1,4 @@
-// components/ChatMessage.tsx
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { ChatMessage as ChatMessageType } from '../types';
 import RecipeCard from './RecipeCard';
 import { UserIcon, BotIcon } from './icons';
@@ -10,7 +8,6 @@ interface ChatMessageProps {
 }
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
-  const { t } = useTranslation();
   const isUser = message.role === 'user';
 
   return (
@@ -23,7 +20,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} w-full max-w-lg`}>
         <div className={`px-4 py-3 rounded-2xl shadow-md transition-all ${isUser ? 'bg-gray-800 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'}`}>
           {message.isLoading && (
-             <p className="italic text-gray-500">{t('thinking')}</p>
+             <p className="italic text-gray-500">BurmaFoodie is thinking...</p>
           )}
           {message.image && (
             <img src={message.image} alt="User upload" className="rounded-lg mb-2 max-w-xs max-h-64 object-cover" />

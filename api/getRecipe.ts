@@ -1,30 +1,19 @@
-// api/getRecipe.ts
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 
-
+// This is a Vercel Edge Function
 export const config = {
   runtime: 'edge',
 };
 
 const API_KEY = process.env.API_KEY;
 
-const getSystemInstruction = (language: string) => {
-  const langMap: { [key: string]: string } = {
-    'en': 'English',
-    'th': 'Thai (ภาษาไทย)',
-    'my': 'Burmese (မြန်မာဘာသာ)',
-    'zh': 'Chinese (中文)'
-  };
-
-  const responseLanguage = langMap[language] || 'the user\'s language';
-
-  return `You are a data processing API, not a conversational AI. Your SOLE task is to convert user requests into a single, raw, perfectly-formed JSON object.
+const systemInstruction = `You are a data processing API, not a conversational AI. Your SOLE task is to convert user requests into a single, raw, perfectly-formed JSON object.
 
 Your persona is an expert chef in Burmese cuisine named BurmaFoodie AI.
 
 **CRITICAL RULES:**
 1.  **JSON ONLY:** Your entire response MUST be a single, valid JSON object. Do NOT include any introductory text, explanations, apologies, or markdown fences (like \`\`\`json). Your response must start with \`{\` and end with \`}\`.
-2.  **LANGUAGE DETECTION & RESPONSE:** The user's requested language is ${responseLanguage}. All JSON *values* (dishName, ingredient names, instructions, etc.) MUST be in ${responseLanguage}.
+2.  **LANGUAGE DETECTION:** You MUST detect the language of the user's request (e.g., Burmese or English). All JSON *values* (dishName, ingredient names, instructions, etc.) MUST be in the detected language.
 3.  **ENGLISH KEYS:** All JSON *keys* (e.g., "dishName", "ingredients", "name", "amount", "instructions", "calories", "error") MUST ALWAYS remain in English.
 4.  **ESCAPE CHARACTERS:** If any text value contains a double quote ("), you MUST escape it with a backslash (\\"). For example, a value like '1" piece' must be written as '"1\\" piece"'.
 
@@ -45,12 +34,20 @@ If a valid recipe is found, use this schema:
 
 If you cannot identify the Burmese dish, or if the input is not food, use this error schema:
 {
-  "error": "I couldn't identify that as a Burmese dish. Please provide a clearer name or photo in ${responseLanguage}."
+  "error": "I couldn't identify that as a Burmese dish. Please provide a clearer name or photo in the user's language."
 }
 
 Analyze the user request and generate the corresponding JSON response according to all the critical rules above.`;
-};
 
+
+function base64ToGenerativePart(base64: string, mimeType: string) {
+  return {
+    inlineData: {
+      data: base64,
+      mimeType,
+    },
+  };
+}
 
 export default async function handler(request: Request) {
   if (!API_KEY) {
@@ -70,30 +67,28 @@ export default async function handler(request: Request) {
   }
 
   try {
-    const { prompt, imageBase64, language = 'en' } = await request.json();
+    const { prompt, imageBase64 } = await request.json();
 
     let contentForAI;
         
     if (imageBase64) {
-      const imagePart = { inlineData: { data: imageBase64.split(',')[1], mimeType: imageBase64.split(';')[0].split(':')[1] } };
+      const imagePart = base64ToGenerativePart(imageBase64.split(',')[1], imageBase64.split(';')[0].split(':')[1]);
       const textPart = { text: prompt };
       contentForAI = { parts: [imagePart, textPart] };
     } else {
-      contentForAI = { parts: [{ text: prompt }]};
+      contentForAI = prompt;
     }
     
-    const systemInstruction = getSystemInstruction(language);
-    
-    const genAI = new GoogleGenAI(API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-preview-0514",
-      systemInstruction: systemInstruction,
+    const response: GenerateContentResponse = await ai.models.generateContent({
+        model: "gemini-2.5-flash-preview-04-17",
+        contents: contentForAI,
+        config: {
+          systemInstruction: systemInstruction,
+          responseMimeType: "application/json",
+        },
     });
 
-    const result = await model.generateContent(contentForAI.parts);
-    const response = result.response;
-    const responseText = response.text();
-
+    const responseText = response.text;
     if (!responseText) {
       console.error("Gemini API returned an empty or invalid response.");
       return new Response(JSON.stringify({ error: "Sorry, I received an empty response from the AI. Please try again." }), {

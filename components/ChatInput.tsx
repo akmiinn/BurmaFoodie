@@ -1,6 +1,4 @@
-// components/ChatInput.tsx
 import React, { useState, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { SendIcon, PaperclipIcon, XIcon } from './icons';
 
 interface ChatInputProps {
@@ -9,7 +7,6 @@ interface ChatInputProps {
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
-  const { t } = useTranslation();
   const [text, setText] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -50,13 +47,12 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
   };
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="bg-white/80 border border-gray-300/80 rounded-2xl p-2 flex items-end shadow-lg backdrop-blur-md">
+    <div className="bg-white/80 border border-gray-300/80 rounded-2xl p-2 flex items-end shadow-lg backdrop-blur-md">
       {image && (
         <div className="relative mr-2 mb-1 self-center">
             <img src={image} alt="Preview" className="w-12 h-12 object-cover rounded-lg border border-gray-300" />
             <button 
                 onClick={removeImage} 
-                type="button"
                 className="absolute -top-1.5 -right-1.5 bg-gray-200 rounded-full p-0.5 text-gray-700 hover:bg-red-500 hover:text-white transition-all duration-200 hover:scale-110"
             >
                 <XIcon className="w-4 h-4"/>
@@ -65,7 +61,6 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
       )}
       <button 
         onClick={() => fileInputRef.current?.click()} 
-        type="button"
         className="p-2 text-gray-500 hover:text-black transition-colors self-center mb-1 disabled:opacity-50"
         aria-label="Attach file"
         disabled={isLoading}
@@ -83,13 +78,13 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={t('input_placeholder')}
+        placeholder="Ask for a recipe..."
         className="flex-1 bg-transparent resize-none outline-none p-2 text-black placeholder-gray-500 max-h-32 text-base"
         rows={1}
         disabled={isLoading}
       />
       <button 
-        type="submit"
+        onClick={handleSend} 
         disabled={isLoading || (!text.trim() && !image)}
         className="ml-2 bg-gradient-to-br from-gray-900 to-black text-white rounded-full p-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-in-out hover:scale-110 hover:shadow-lg hover:shadow-black/20 active:scale-100 self-center mb-0.5"
         aria-label="Send message"
@@ -100,7 +95,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
             <SendIcon className="w-5 h-5" />
         )}
       </button>
-    </form>
+    </div>
   );
 };
 
