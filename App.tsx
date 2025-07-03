@@ -28,7 +28,7 @@ const App: React.FC = () => {
   }, [chatHistory]);
 
   useEffect(() => {
-    // Create history to save, excluding image data (base64) to save space
+    // สร้าง history สำหรับบันทึกโดยไม่รวมข้อมูลรูปภาพ (base64) เพื่อประหยัดพื้นที่
     const historyToSave = chatHistory.map(msg => {
       const { image, ...rest } = msg;
       return rest;
@@ -62,25 +62,25 @@ const App: React.FC = () => {
     let prompt;
     if (imageBase64) {
       if (inputText.trim()) {
-        prompt = `The user has provided an image and the following text: "${inputText}". Please process this request.`;
+        prompt = `The user has provided an image and the following text: "${inputText}". Identify the Burmese dish and provide its recipe. The user's text is the primary instruction, and the image provides context. Please respond in the language of the user's text.`;
       } else {
-        prompt = "The user has provided an image. Please process this request.";
+        prompt = "Analyze the attached image and provide the recipe for the Burmese dish shown. Identify the language from any visible text or typical context and respond in that language (Burmese or English).";
       }
     } else {
-      prompt = inputText;
+      prompt = `Provide the recipe for: ${inputText}`;
     }
 
     const result = await getRecipeForDish(prompt, imageBase64);
 
     let finalModelMessage: ChatMessageType;
 
-    if ('answer' in result) {
-        finalModelMessage = {
-            id: modelLoadingMessageId,
-            role: 'model',
-            text: result.answer,
-            answer: result.answer
-        };
+    if ('greeting' in result) {
+      finalModelMessage = {
+        id: modelLoadingMessageId,
+        role: 'model',
+        text: result.greeting,
+        greeting: result.greeting
+      };
     } else if ('error' in result) {
        finalModelMessage = {
           id: modelLoadingMessageId,
