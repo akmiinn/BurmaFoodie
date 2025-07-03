@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChatMessage as ChatMessageType } from '../types';
 import RecipeCard from './RecipeCard';
+import SuggestionCard from './SuggestionCard'; // Import the new component
 import { UserIcon, BotIcon } from './icons';
 
 interface ChatMessageProps {
@@ -9,6 +10,33 @@ interface ChatMessageProps {
 
 const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const isUser = message.role === 'user';
+  const content = message.content;
+
+  const renderModelContent = () => {
+    if (!content) return null;
+
+    switch (content.responseType) {
+      case 'recipe':
+        return (
+          <div className="mt-4 w-full">
+            <RecipeCard recipe={content} />
+          </div>
+        );
+      case 'ingredientSuggestion':
+        return (
+          <div className="mt-4 w-full">
+            <SuggestionCard suggestion={content} />
+          </div>
+        );
+      case 'greeting':
+      case 'clarification':
+        return <p className="whitespace-pre-wrap">{content.text}</p>;
+      case 'error':
+        return <p className="whitespace-pre-wrap text-red-600">{content.error}</p>;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className={`flex items-start gap-3 md:gap-4 animate-fadeInUp ${isUser ? 'justify-end' : ''}`}>
@@ -22,16 +50,15 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           {message.isLoading && (
              <p className="italic text-gray-500">BurmaFoodie is thinking...</p>
           )}
-          {message.image && (
+          {/* User message content */}
+          {isUser && message.image && (
             <img src={message.image} alt="User upload" className="rounded-lg mb-2 max-w-xs max-h-64 object-cover" />
           )}
-          {message.text && <p className="whitespace-pre-wrap">{message.text}</p>}
+          {isUser && message.text && <p className="whitespace-pre-wrap">{message.text}</p>}
+          
+          {/* Model message content */}
+          {!isUser && renderModelContent()}
         </div>
-        {message.recipe && (
-          <div className="mt-4 w-full">
-            <RecipeCard recipe={message.recipe} />
-          </div>
-        )}
       </div>
       {isUser && (
         <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-800 flex items-center justify-center border border-gray-900 shadow-md">
