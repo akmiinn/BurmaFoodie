@@ -5,105 +5,127 @@ import ChatInput from './components/ChatInput';
 import ChatMessage from './components/ChatMessage';
 import { LogoIcon } from './components/icons';
 
-const App: React.FC = () => {
+// Custom hook for managing chat history with localStorage
+const useChatHistory = () => {
   const [chatHistory, setChatHistory] = useState<ChatMessageType[]>(() => {
     try {
       const savedHistory = localStorage.getItem('chatHistory');
+      // We don't save images to local storage, so no need to parse them.
       return savedHistory ? JSON.parse(savedHistory) : [];
     } catch (error) {
-      console.error("Failed to parse chat history", error);
+      console.error("Failed to parse chat history from localStorage", error);
       return [];
     }
   });
 
+  useEffect(() => {
+    // Create a version of history for saving that excludes image data and loading states.
+    const historyToSave = chatHistory
+      .filter(msg => !msg.isLoading) // Don't save loading messages
+      .map(msg => {
+        const { image, ...rest } = msg; // Exclude image base64 string
+        return rest;
+      });
+      
+    if (historyToSave.length > 0) {
+        localStorage.setItem('chatHistory', JSON.stringify(historyToSave));
+    } else {
+        localStorage.removeItem('chatHistory');
+    }
+  }, [chatHistory]);
+
+  return [chatHistory, setChatHistory] as const;
+};
+
+
+const App: React.FC = () => {
+  const [chatHistory, setChatHistory] = useChatHistory();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
+  useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [chatHistory]);
-
-  useEffect(() => {
-    // สร้าง history สำหรับบันทึกโดยไม่รวมข้อมูลรูปภาพ (base64) เพื่อประหยัดพื้นที่
-    const historyToSave = chatHistory.map(msg => {
-      const { image, ...rest } = msg;
-      return rest;
-    });
-    localStorage.setItem('chatHistory', JSON.stringify(historyToSave));
   }, [chatHistory]);
 
   const handleSendMessage = useCallback(async (inputText: string, imageBase64: string | null) => {
-    if (!inputText.trim() && !imageBase64) return;
+    if ((!inputText.trim() && !imageBase64) || isLoading) return;
+    
     setIsLoading(true);
 
-    const userMessageId = Date.now().toString();
     const userMessage: ChatMessageType = {
-      id: userMessageId,
+      id: `user-${Date.now()}`,
       role: 'user',
       text: inputText,
       image: imageBase64 || undefined,
     };
 
-    setChatHistory(prev => [...prev, userMessage]);
-
-    const modelLoadingMessageId = (Date.now() + 1).toString();
     const modelLoadingMessage: ChatMessageType = {
-      id: modelLoadingMessageId,
+      id: `model-loading-${Date.now()}`,
       role: 'model',
       text: '',
       isLoading: true
     };
-    setChatHistory(prev => [...prev, modelLoadingMessage]);
 
-    let prompt;
-    if (imageBase64) {
-      if (inputText.trim()) {
-        prompt = `The user has provided an image and the following text: "${inputText}". Identify the Burmese dish and provide its recipe. The user's text is the primary instruction, and the image provides context. Please respond in the language of the user's text.`;
+    // Add user message and loading indicator immediately
+    setChatHistory(prev => [...prev, userMessage, modelLoadingMessage]);
+    
+    try {
+      let prompt;
+      if (imageBase64) {
+        prompt = inputText.trim() 
+          ? `The user has provided an image and the following text: "${inputText}". Please respond in the language of the user's text.`
+          : "Analyze the attached image and provide the recipe for the Burmese dish shown. Respond in English unless the image contains Burmese text.";
       } else {
-        prompt = "Analyze the attached image and provide the recipe for the Burmese dish shown. Identify the language from any visible text or typical context and respond in that language (Burmese or English).";
+        prompt = `Provide the recipe for: ${inputText}`;
       }
-    } else {
-      prompt = `Provide the recipe for: ${inputText}`;
+
+      const result = await getRecipeForDish(prompt, imageBase64);
+
+      let finalModelMessage: ChatMessageType;
+      const modelMessageId = `model-response-${Date.now()}`;
+
+      if ('error' in result) {
+         finalModelMessage = {
+            id: modelMessageId,
+            role: 'model',
+            text: result.error,
+            error: result.error
+         };
+      } else { // Assumes a valid Recipe object
+        finalModelMessage = {
+            id: modelMessageId,
+            role: 'model',
+            text: `Here is the recipe for ${result.dishName}.`,
+            recipe: result as Recipe
+        };
+      }
+      
+      // Replace the loading message with the final response
+      setChatHistory(prev => [
+        ...prev.filter(msg => !msg.isLoading), // Remove loading indicator
+        finalModelMessage
+      ]);
+
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+        const errorResponse: ChatMessageType = {
+            id: `model-error-${Date.now()}`,
+            role: 'model',
+            text: `Sorry, something went wrong: ${errorMessage}`,
+            error: errorMessage,
+        };
+        // Replace the loading message with an error message
+        setChatHistory(prev => [
+            ...prev.filter(msg => !msg.isLoading),
+            errorResponse
+        ]);
+    } finally {
+      setIsLoading(false);
     }
-
-    const result = await getRecipeForDish(prompt, imageBase64);
-
-    let finalModelMessage: ChatMessageType;
-
-    if ('greeting' in result) {
-      finalModelMessage = {
-        id: modelLoadingMessageId,
-        role: 'model',
-        text: result.greeting,
-        greeting: result.greeting
-      };
-    } else if ('error' in result) {
-       finalModelMessage = {
-          id: modelLoadingMessageId,
-          role: 'model',
-          text: result.error,
-          error: result.error
-       };
-    } else {
-      finalModelMessage = {
-          id: modelLoadingMessageId,
-          role: 'model',
-          text: `Here is the recipe for ${result.dishName}.`,
-          recipe: result as Recipe
-      };
-    }
-
-    setChatHistory(prev => prev.map(msg => msg.id === modelLoadingMessageId ? finalModelMessage : msg));
-    setIsLoading(false);
-  }, []);
+  }, [isLoading, setChatHistory]);
 
   const handleClearHistory = () => {
     setChatHistory([]);
-    localStorage.removeItem('chatHistory');
   };
 
   return (
