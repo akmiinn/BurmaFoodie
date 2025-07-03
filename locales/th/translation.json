@@ -1,0 +1,11 @@
+{
+  "header_title": "พม่าฟู้ดดี้",
+  "clear_history": "ล้างประวัติ",
+  "welcome_title": "ยินดีต้อนรับสู่ BurmaFoodie!",
+  "welcome_subtitle": "พิมพ์ชื่ออาหารพม่า (เช่น \"မုန့်ဟင်းခါး\" หรือ \"Mohinga\") หรืออัปโหลดรูปภาพเพื่อรับสูตรอาหาร",
+  "input_placeholder": "สอบถามสูตรอาหาร...",
+  "thinking": "BurmaFoodie กำลังประมวลผล...",
+  "recipe_for": "นี่คือสูตรสำหรับ {{dishName}}",
+  "ingredients": "ส่วนผสม",
+  "instructions": "วิธีทำ"
+}

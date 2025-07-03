@@ -1,0 +1,11 @@
+{
+  "header_title": "缅甸美食家",
+  "clear_history": "清除历史记录",
+  "welcome_title": "欢迎来到 BurmaFoodie！",
+  "welcome_subtitle": "输入缅甸菜肴的名称（例如“မုန့်ဟင်းခါး”或“Mohinga”）或上传照片以获取食谱。",
+  "input_placeholder": "询问食谱...",
+  "thinking": "BurmaFoodie 正在思考中...",
+  "recipe_for": "这是 {{dishName}} 的食谱",
+  "ingredients": "原料",
+  "instructions": "说明"
+}
