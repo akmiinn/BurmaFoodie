@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { ChatMessage as ChatMessageType, Recipe } from './types';
 import { getRecipeForDish } from './services/geminiService';
 import ChatInput from './components/ChatInput';
@@ -145,6 +146,7 @@ const App: React.FC = () => {
           <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
         </div>
       </footer>
+      <Analytics />
     </div>
   );
 };
