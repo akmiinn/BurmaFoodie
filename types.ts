@@ -14,11 +14,11 @@ export interface RecipeError {
     error: string;
 }
 
-export interface Greeting {
-    greeting: string;
+export interface Answer {
+    answer: string;
 }
 
-export type GeminiResponse = Recipe | RecipeError | Greeting;
+export type GeminiResponse = Recipe | RecipeError | Answer;
 
 export interface ChatMessage {
   id: string;
@@ -27,6 +27,6 @@ export interface ChatMessage {
   image?: string; // base64 string
   recipe?: Recipe;
   error?: string;
-  greeting?: string;
+  answer?: string;
   isLoading?: boolean;
 }
