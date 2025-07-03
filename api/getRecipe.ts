@@ -5,6 +5,7 @@ export const config = {
   runtime: 'edge',
 };
 
+// It is critical to ensure the API_KEY is accessed securely from environment variables.
 const API_KEY = process.env.API_KEY;
 
 const systemInstruction = `You are a data processing API, not a conversational AI. Your SOLE task is to convert user requests into a single, raw, perfectly-formed JSON object.
@@ -50,45 +51,59 @@ function base64ToGenerativePart(base64: string, mimeType: string) {
 }
 
 export default async function handler(request: Request) {
-  if (!API_KEY) {
-     return new Response(JSON.stringify({ error: "API_KEY environment variable not set on the server." }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-  
-  const ai = new GoogleGenAI({ apiKey: API_KEY });
-
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
       status: 405,
       headers: { 'Content-Type': 'application/json' },
     });
   }
+  
+  if (!API_KEY) {
+     console.error("API_KEY environment variable not set on the server.");
+     return new Response(JSON.stringify({ error: "Server configuration error. API key is missing." }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+  
+  const genAI = new GoogleGenAI(API_KEY);
+  const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash",
+      systemInstruction: {
+        parts: [{ text: systemInstruction }],
+        role: "model"
+      }
+  });
+
 
   try {
     const { prompt, imageBase64 } = await request.json();
 
-    let contentForAI;
-        
+    const parts: (string | { inlineData: { mimeType: string; data: string; } })[] = [prompt];
+
     if (imageBase64) {
-      const imagePart = base64ToGenerativePart(imageBase64.split(',')[1], imageBase64.split(';')[0].split(':')[1]);
-      const textPart = { text: prompt };
-      contentForAI = { parts: [imagePart, textPart] };
-    } else {
-      contentForAI = prompt;
+      const mimeType = imageBase64.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,/)?.[1];
+      const base64Data = imageBase64.split(',')[1];
+      if(mimeType && base64Data) {
+        parts.unshift(base64ToGenerativePart(base64Data, mimeType));
+      } else {
+        return new Response(JSON.stringify({ error: "Invalid image format." }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
     }
-    
-    const response: GenerateContentResponse = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview-04-17",
-        contents: contentForAI,
-        config: {
-          systemInstruction: systemInstruction,
+
+    const result = await model.generateContent({
+        contents: [{ role: "user", parts }],
+        generationConfig: {
           responseMimeType: "application/json",
         },
     });
 
-    const responseText = response.text;
+    const response = result.response;
+    const responseText = response.text();
+
     if (!responseText) {
       console.error("Gemini API returned an empty or invalid response.");
       return new Response(JSON.stringify({ error: "Sorry, I received an empty response from the AI. Please try again." }), {
@@ -97,14 +112,8 @@ export default async function handler(request: Request) {
       });
     }
 
-    let jsonStr = responseText.trim();
-    const fenceRegex = /^```(\w*)?\s*\n?(.*?)\n?\s*```$/s;
-    const match = jsonStr.match(fenceRegex);
-    if (match && match[2]) {
-      jsonStr = match[2].trim();
-    }
-    
-    const parsedData = JSON.parse(jsonStr);
+    // The response should already be JSON, so we can parse it directly.
+    const parsedData = JSON.parse(responseText);
     
     return new Response(JSON.stringify(parsedData), {
         status: 200,
@@ -113,7 +122,8 @@ export default async function handler(request: Request) {
 
   } catch (e) {
     console.error("Vercel Function Error:", e);
-    return new Response(JSON.stringify({ error: "Sorry, the server encountered an error. Please try again." }), {
+    const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
+    return new Response(JSON.stringify({ error: `Sorry, the server encountered an error: ${errorMessage}` }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
     });
