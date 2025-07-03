@@ -1,111 +1,102 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChatMessage as ChatMessageType, GeminiResponse } from './types';
+import { ChatMessage as ChatMessageType, Recipe } from './types';
 import { getRecipeForDish } from './services/geminiService';
 import ChatInput from './components/ChatInput';
 import ChatMessage from './components/ChatMessage';
 import { LogoIcon } from './components/icons';
 
-// Custom hook for managing chat history with localStorage
-const useChatHistory = () => {
+const App: React.FC = () => {
   const [chatHistory, setChatHistory] = useState<ChatMessageType[]>(() => {
     try {
       const savedHistory = localStorage.getItem('chatHistory');
-      if (!savedHistory) return [];
-      // We don't save images to local storage, so filter them out on load.
-      const parsed = JSON.parse(savedHistory);
-      return parsed.map((msg: ChatMessageType) => ({...msg, image: undefined}));
+      return savedHistory ? JSON.parse(savedHistory) : [];
     } catch (error) {
-      console.error("Failed to parse chat history from localStorage", error);
+      console.error("Failed to parse chat history", error);
       return [];
     }
   });
 
-  useEffect(() => {
-    // Create a version of history for saving that excludes image data and loading states.
-    const historyToSave = chatHistory
-      .filter(msg => !msg.isLoading) // Don't save loading messages
-      .map(msg => {
-        const { image, ...rest } = msg; // Exclude image base64 string
-        return rest;
-      });
-      
-    if (historyToSave.length > 0) {
-        localStorage.setItem('chatHistory', JSON.stringify(historyToSave));
-    } else {
-        localStorage.removeItem('chatHistory');
-    }
-  }, [chatHistory]);
-
-  return [chatHistory, setChatHistory] as const;
-};
-
-
-const App: React.FC = () => {
-  const [chatHistory, setChatHistory] = useChatHistory();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [chatHistory]);
 
+  useEffect(() => {
+    // สร้าง history สำหรับบันทึกโดยไม่รวมข้อมูลรูปภาพ (base64) เพื่อประหยัดพื้นที่
+    const historyToSave = chatHistory.map(msg => {
+      const { image, ...rest } = msg;
+      return rest;
+    });
+    localStorage.setItem('chatHistory', JSON.stringify(historyToSave));
+  }, [chatHistory]);
+  
   const handleSendMessage = useCallback(async (inputText: string, imageBase64: string | null) => {
-    if ((!inputText.trim() && !imageBase64) || isLoading) return;
-    
+    if (!inputText.trim() && !imageBase64) return;
     setIsLoading(true);
 
+    const userMessageId = Date.now().toString();
     const userMessage: ChatMessageType = {
-      id: `user-${Date.now()}`,
+      id: userMessageId,
       role: 'user',
       text: inputText,
       image: imageBase64 || undefined,
     };
+    
+    setChatHistory(prev => [...prev, userMessage]);
 
+    const modelLoadingMessageId = (Date.now() + 1).toString();
     const modelLoadingMessage: ChatMessageType = {
-      id: `model-loading-${Date.now()}`,
+      id: modelLoadingMessageId,
       role: 'model',
+      text: '',
       isLoading: true
     };
+    setChatHistory(prev => [...prev, modelLoadingMessage]);
 
-    setChatHistory(prev => [...prev, userMessage, modelLoadingMessage]);
-    
-    try {
-      const result: GeminiResponse = await getRecipeForDish(inputText, imageBase64);
-
-      const finalModelMessage: ChatMessageType = {
-          id: `model-response-${Date.now()}`,
-          role: 'model',
-          content: result,
-      };
-      
-      // Replace the loading message with the final response
-      setChatHistory(prev => [
-        ...prev.filter(msg => !msg.isLoading), // Remove loading indicator
-        finalModelMessage
-      ]);
-
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
-        const errorResponse: ChatMessageType = {
-            id: `model-error-${Date.now()}`,
-            role: 'model',
-            content: {
-                responseType: 'error',
-                error: `Sorry, something went wrong: ${errorMessage}`
-            },
-        };
-        // Replace the loading message with an error message
-        setChatHistory(prev => [
-            ...prev.filter(msg => !msg.isLoading),
-            errorResponse
-        ]);
-    } finally {
-      setIsLoading(false);
+    let prompt;
+    if (imageBase64) {
+      if (inputText.trim()) {
+        prompt = `The user has provided an image and the following text: "${inputText}". Identify the Burmese dish and provide its recipe. The user's text is the primary instruction, and the image provides context. Please respond in the language of the user's text.`;
+      } else {
+        prompt = "Analyze the attached image and provide the recipe for the Burmese dish shown. Identify the language from any visible text or typical context and respond in that language (Burmese or English).";
+      }
+    } else {
+      prompt = `Provide the recipe for: ${inputText}`;
     }
-  }, [isLoading, setChatHistory]);
+    
+    const result = await getRecipeForDish(prompt, imageBase64);
+
+    let finalModelMessage: ChatMessageType;
+
+    if ('error' in result) {
+       finalModelMessage = {
+          id: modelLoadingMessageId,
+          role: 'model',
+          text: result.error,
+          error: result.error
+       };
+    } else {
+      finalModelMessage = {
+          id: modelLoadingMessageId,
+          role: 'model',
+          text: `Here is the recipe for ${result.dishName}.`,
+          recipe: result as Recipe
+      };
+    }
+
+    setChatHistory(prev => prev.map(msg => msg.id === modelLoadingMessageId ? finalModelMessage : msg));
+    setIsLoading(false);
+  }, []);
 
   const handleClearHistory = () => {
     setChatHistory([]);
+    localStorage.removeItem('chatHistory');
   };
 
   return (
@@ -120,7 +111,7 @@ const App: React.FC = () => {
               </h1>
             </div>
             {chatHistory.length > 0 && (
-              <button
+              <button 
                 onClick={handleClearHistory}
                 className="text-xs text-gray-500 hover:text-red-600 transition-colors px-3 py-1 rounded-md bg-gray-200/50 hover:bg-red-100/80"
                 title="Clear chat history"
@@ -131,13 +122,13 @@ const App: React.FC = () => {
           </div>
         </div>
       </header>
-
+      
       <main className="flex-1 flex flex-col pt-24 pb-32 md:pb-36">
         <div className="max-w-3xl w-full mx-auto px-4 flex-1 overflow-y-auto">
            {chatHistory.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center text-gray-600 animate-fadeInUp">
                 <p className="text-lg">Welcome to BurmaFoodie!</p>
-                <p className="mt-2 text-sm max-w-md">You can ask me for a Burmese recipe, or give me a list of ingredients (e.g., "chicken, onion, garlic") to see what you can make!</p>
+                <p className="mt-2 text-sm max-w-sm">Type a Burmese dish name (e.g., "မုန့်ဟင်းခါး" or "Mohinga") or upload a photo to get a recipe.</p>
             </div>
            )}
           <div className="space-y-6">
