@@ -123,7 +123,7 @@ const App: React.FC = () => {
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col pt-24 pb-32 md:pb-36">
+      <main className="flex-1 fixed flex-col pt-24 pb-32 md:pb-36">
         <div className="max-w-3xl w-full mx-auto px-4 flex-1 overflow-y-auto">
            {chatHistory.length === 0 && (
             <div className="fixed flex-col items-center justify-center h-full text-center text-gray-600 animate-fadeInUp">
