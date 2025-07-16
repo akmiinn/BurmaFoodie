@@ -224,8 +224,17 @@ const App: React.FC = () => {
 
       {/* Footer: flex-shrink-0 ensures it takes its natural height and doesn't shrink */}
        <footer className="fixed bottom-0 left-0 right-0 bg-white/70 backdrop-blur-lg border-t border-black/10">
-         <div className="max-w-3xl mx-auto p-4">
+         <div className="max-w-3xl mx-auto px-4 pt-4 pb-2">
            <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+           <p className="text-center text-xs text-gray-500 pt-2.5">
+              <span>Copyright © 2025 BurmaFoodie.</span>
+              <span className="mx-2">|</span>
+              <a href="#" className="underline hover:text-black transition-colors">Terms of Service</a>
+              <span className="mx-2">|</span>
+              <a href="#" className="underline hover:text-black transition-colors">Privacy Policy</a>
+              <span className="mx-2">|</span>
+              <a href="mailto:info@burmafoodie.site" className="underline hover:text-black transition-colors">Contact Us</a>
+            </p>
          </div>
        </footer>
      </div>
