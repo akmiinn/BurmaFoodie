@@ -103,7 +103,7 @@ const App: React.FC = () => {
       <header className="fixed top-0 left-0 right-0 bg-white/70 backdrop-blur-lg z-10 border-b border-black/10">
         <div className="max-w-3xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="fixed items-center space-x-3">
+            <div className="flex items-center space-x-3">
               <LogoIcon className="w-8 h-8" />
               <h1 className="text-2xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-black to-gray-700">
                 BurmaFoodie
