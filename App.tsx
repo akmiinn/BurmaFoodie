@@ -204,7 +204,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <footer className="bg-white/70 backdrop-blur-lg border-t border-black/10">
+      <footer className="fixed bottom-0 left-0 right-0 bg-white/70 backdrop-blur-lg border-t border-black/10">
         <div className="max-w-3xl mx-auto p-4">
           <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
         </div>
