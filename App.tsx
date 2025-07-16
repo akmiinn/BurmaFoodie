@@ -101,14 +101,14 @@ const App: React.FC = () => {
           id: modelLoadingMessageId,
           role: 'model',
           text: (result as Greeting).greeting,
-       };
+        };
     } else if ('error' in result) {
        finalModelMessage = {
           id: modelLoadingMessageId,
           role: 'model',
           text: result.error,
           error: result.error
-       };
+        };
     } else {
       finalModelMessage = {
           id: modelLoadingMessageId,
@@ -128,7 +128,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-200 text-black h-screen flex flex-col font-sans">
+    <div className="bg-gradient-to-br from-gray-50 to-gray-200 text-black h-screen flex flex-col font-sans relative">
       <header className="fixed top-0 left-0 right-0 bg-white/70 backdrop-blur-lg z-10 border-b border-black/10">
         <div className="max-w-3xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -138,7 +138,7 @@ const App: React.FC = () => {
                 BurmaFoodie
               </h1>
             </div>
-             {/* ===== START: Language Switcher and Clear History Logic ===== */}
+              {/* ===== START: Language Switcher and Clear History Logic ===== */}
             <div className="flex items-center space-x-4">
               {chatHistory.length > 0 && (
                 <button 
@@ -151,16 +151,17 @@ const App: React.FC = () => {
               )}
               <LanguageSwitcher language={language} setLanguage={setLanguage} />
             </div>
-             {/* ===== END: Language Switcher and Clear History Logic ===== */}
+              {/* ===== END: Language Switcher and Clear History Logic ===== */}
           </div>
         </div>
       </header>
       
-      <main className="flex-1 overflow-y-auto pt-40 pb-[calc(theme('spacing.20')+theme('spacing.8'))]">
-        <div className="max-w-3xl w-full mx-auto px-4 pt-6 pb-8 relative flex-1 h-full">
-           
+      {/* Adjusted main content to use dynamic padding based on header/footer height */}
+      <main className="flex-1 overflow-y-auto" style={{ paddingTop: '80px', paddingBottom: '80px' }}> 
+        <div className="max-w-3xl w-full mx-auto px-4 relative flex-1 h-full">
+            
            {chatHistory.length === 0 && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center animate-fadeInUp">
+           <div className="absolute inset-0 flex flex-col items-center justify-center text-center animate-fadeInUp">
                 <div className="text-gray-600 w-full">
                     {/* ===== Logo without the circle ===== */}
                     <LogoIcon className="w-12 h-12 inline-block mb-4" />
@@ -195,22 +196,22 @@ const App: React.FC = () => {
             </div>
            )}
 
-          <div className="space-y-6">
-            {chatHistory.map((msg) => (
-              <ChatMessage key={msg.id} message={msg} />
-            ))}
-            <div ref={chatEndRef} />
-          </div>
-        </div>
-      </main>
+           <div className="space-y-6">
+             {chatHistory.map((msg) => (
+               <ChatMessage key={msg.id} message={msg} />
+             ))}
+             <div ref={chatEndRef} />
+           </div>
+         </div>
+       </main>
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/70 backdrop-blur-lg border-t border-black/10">
-        <div className="max-w-3xl mx-auto p-4">
-          <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-        </div>
-      </footer>
-    </div>
-  );
-};
+       <footer className="fixed bottom-0 left-0 right-0 bg-white/70 backdrop-blur-lg border-t border-black/10">
+         <div className="max-w-3xl mx-auto p-4">
+           <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+         </div>
+       </footer>
+     </div>
+   );
+ };
 
 export default App;
