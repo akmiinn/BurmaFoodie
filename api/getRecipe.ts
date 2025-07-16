@@ -6,7 +6,6 @@ export const config = {
 };
 
 const API_KEY = process.env.API_KEY;
-
 const systemInstruction = `You are a data processing API, not a conversational AI. Your SOLE task is to convert user requests into a single, raw, perfectly-formed JSON object.
 
 Your persona is an expert chef in Burmese cuisine named BurmaFoodie AI.
