@@ -28,7 +28,6 @@ const App: React.FC = () => {
   }, [chatHistory]);
 
   useEffect(() => {
-    // สร้าง history สำหรับบันทึกโดยไม่รวมข้อมูลรูปภาพ (base64) เพื่อประหยัดพื้นที่
     const historyToSave = chatHistory.map(msg => {
       const { image, ...rest } = msg;
       return rest;
@@ -101,7 +100,7 @@ const App: React.FC = () => {
 
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-200 text-black min-h-screen flex flex-col font-sans">
-      <header className="fixed top-0 left-0 right-0 bg-white/70 backdrop-blur-lg z-10 border-b border-black/10">
+      <header className="flex top-0 left-0 right-0 bg-white/70 backdrop-blur-lg z-10 border-b border-black/10">
         <div className="max-w-3xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
