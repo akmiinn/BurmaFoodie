@@ -132,12 +132,40 @@ const App: React.FC = () => {
       <main className="flex-1 flex flex-col pt-24 pb-32 md:pb-36">
         <div className="max-w-3xl w-full mx-auto px-4 flex-1 overflow-y-auto relative">
            {chatHistory.length === 0 && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-gray-600 animate-fadeInUp pointer-events-none">
-                <div>
-                    <p className="text-lg">Welcome to BurmaFoodie!</p>
-                    <p className="mt-2 text-sm max-w-sm">Type a Burmese dish name (e.g., "မုန့်ဟင်းခါး" or "Mohinga") or upload a photo to get a recipe.</p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center animate-fadeInUp">
+                <div className="text-gray-600 w-full">
+                    <div className="inline-block p-3 bg-white rounded-full shadow-md mb-4 border border-gray-200">
+                        <LogoIcon className="w-10 h-10" />
+                    </div>
+                    <p className="text-2xl font-bold text-gray-800">Welcome!</p>
+                    <p className="mt-2 text-sm max-w-sm mx-auto">Let BurmaFoodie help you find Burmese recipes today. Type a dish name, upload a photo, or try an example below.</p>
+                </div>
+
+                <div className="mt-8 flex flex-wrap justify-center gap-3 px-4">
+                    <button
+                        onClick={() => handleSendMessage("How to make Mohinga", null)}
+                        disabled={isLoading}
+                        className="bg-white/80 border border-gray-300/80 rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-200/60 transition-colors disabled:opacity-50"
+                    >
+                        How to make Mohinga
+                    </button>
+                    <button
+                        onClick={() => handleSendMessage("Tea Leaf Salad recipe please", null)}
+                        disabled={isLoading}
+                        className="bg-white/80 border border-gray-300/80 rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-200/60 transition-colors disabled:opacity-50"
+                    >
+                        Tea Leaf Salad recipe please
+                    </button>
+                    <button
+                        onClick={() => handleSendMessage("What's in Shan Noodles?", null)}
+                        disabled={isLoading}
+                        className="bg-white/80 border border-gray-300/80 rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-200/60 transition-colors disabled:opacity-50"
+                    >
+                        What's in Shan Noodles?
+                    </button>
                 </div>
             </div>
+          
            )}
           <div className="space-y-6">
             {chatHistory.map((msg) => (
