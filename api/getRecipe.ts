@@ -79,7 +79,8 @@ export default async function handler(request: Request) {
     }
     
     const response: GenerateContentResponse = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview-04-17",
+        // ===== CHANGE HERE: Updated to the new stable model =====
+        model: "gemini-2.5-flash",
         contents: contentForAI,
         config: {
           systemInstruction: systemInstruction,
@@ -110,9 +111,17 @@ export default async function handler(request: Request) {
         headers: { 'Content-Type': 'application/json' },
     });
 
-  } catch (e) {
-    console.error("Vercel Function Error:", e);
-    return new Response(JSON.stringify({ error: "Sorry, the server encountered an error. Please try again." }), {
+  } catch (e: unknown) {
+    // ===== CHANGE HERE: Improved error logging =====
+    let errorMessage = "Sorry, the server encountered an error. Please try again.";
+    if (e instanceof Error) {
+        console.error("Vercel Function Error:", e.message);
+        errorMessage = e.message; // Pass the actual error message to the client
+    } else {
+        console.error("Vercel Function Error:", e);
+    }
+    
+    return new Response(JSON.stringify({ error: errorMessage }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
     });
