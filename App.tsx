@@ -43,7 +43,11 @@ const App: React.FC = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Adding a slight delay to ensure content has rendered before scrolling
+    // This can sometimes help with rendering inconsistencies, especially after state updates
+    setTimeout(() => {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100); 
   };
 
   useEffect(() => {
@@ -52,6 +56,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const historyToSave = chatHistory.map(msg => {
+      // Exclude the 'image' property when saving to localStorage
+      // as base64 images can make localStorage too large or cause parsing issues
       const { image, ...rest } = msg;
       return rest;
     });
@@ -67,7 +73,7 @@ const App: React.FC = () => {
       id: userMessageId,
       role: 'user',
       text: inputText,
-      image: imageBase64 || undefined,
+      image: imageBase64 || undefined, // Store image if provided
     };
     
     setChatHistory(prev => [...prev, userMessage]);
@@ -76,7 +82,7 @@ const App: React.FC = () => {
     const modelLoadingMessage: ChatMessageType = {
       id: modelLoadingMessageId,
       role: 'model',
-      text: '',
+      text: '', // Empty text as it's a loading state
       isLoading: true
     };
     setChatHistory(prev => [...prev, modelLoadingMessage]);
@@ -92,32 +98,35 @@ const App: React.FC = () => {
       prompt = inputText;
     }
     
+    // Call the Gemini service
     const result: GeminiResponse = await getRecipeForDish(prompt, imageBase64);
 
     let finalModelMessage: ChatMessageType;
 
+    // Determine the final message based on the Gemini response
     if ('greeting' in result) {
        finalModelMessage = {
-          id: modelLoadingMessageId,
-          role: 'model',
-          text: (result as Greeting).greeting,
-        };
+           id: modelLoadingMessageId,
+           role: 'model',
+           text: (result as Greeting).greeting,
+         };
     } else if ('error' in result) {
        finalModelMessage = {
-          id: modelLoadingMessageId,
-          role: 'model',
-          text: result.error,
-          error: result.error
-        };
+           id: modelLoadingMessageId,
+           role: 'model',
+           text: result.error,
+           error: result.error
+         };
     } else {
       finalModelMessage = {
-          id: modelLoadingMessageId,
-          role: 'model',
-          text: `Here is the recipe for ${(result as Recipe).dishName}.`,
-          recipe: result as Recipe
-      };
+           id: modelLoadingMessageId,
+           role: 'model',
+           text: `Here is the recipe for ${(result as Recipe).dishName}.`, // Include a default text for recipes
+           recipe: result as Recipe
+       };
     }
 
+    // Update the loading message with the final content
     setChatHistory(prev => prev.map(msg => msg.id === modelLoadingMessageId ? finalModelMessage : msg));
     setIsLoading(false);
   }, []);
@@ -128,85 +137,98 @@ const App: React.FC = () => {
   };
 
   return (
+    // Main container uses flex-col to stack header, main, and footer vertically.
+    // h-screen makes it take full viewport height.
     <div className="bg-gradient-to-br from-gray-50 to-gray-200 text-black h-screen flex flex-col font-sans">
-+      {/* Header - fixed at top */}
-+      <header className="flex-shrink-0 bg-white/70 backdrop-blur-lg z-10 border-b border-black/10">
-+        <div className="max-w-3xl mx-auto px-4 py-3">
-+          <div className="flex items-center justify-between">
-+            <div className="flex items-center space-x-3">
-+              <LogoIcon className="w-8 h-8" />
-+              <h1 className="text-2xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-black to-gray-700">
-+                BurmaFoodie
-+              </h1>
-+            </div>
-+            <div className="flex items-center space-x-4">
-+              {chatHistory.length > 0 && (
-+                <button
-+                  onClick={handleClearHistory}
-+                  className="text-xs text-gray-500 hover:text-red-600 transition-colors px-3 py-1 rounded-md bg-gray-200/50 hover:bg-red-100/80"
-+                  title="Clear chat history"
-+                >
-+                  {uiText[language].clearHistory}
-+                </button>
-+              )}
-+              <LanguageSwitcher language={language} setLanguage={setLanguage} />
-+            </div>
-+          </div>
-+        </div>
-+      </header>
-+
-+      {/* Main content area - takes up remaining space and scrolls */}
-+      <main className="flex-1 overflow-y-auto pt-4 pb-4"> {/* Added general padding here */}
-+        <div className="max-w-3xl w-full mx-auto px-4"> {/* Removed fixed pt/pb from here */}
-+          {chatHistory.length === 0 && (
-+            <div className="flex flex-col items-center justify-center text-center h-full min-h-[calc(100vh-160px)] animate-fadeInUp"> {/* Adjusted min-h for intro */}
-+              <div className="text-gray-600 w-full">
-+                <LogoIcon className="w-12 h-12 inline-block mb-4" />
-+                <p className="text-2xl font-bold text-gray-800">{uiText[language].welcome}</p>
-+                <p className="mt-2 text-sm max-w-sm mx-auto">{uiText[language].subtext}</p>
-+              </div>
-+              <div className="mt-8 flex flex-wrap justify-center gap-3 px-4">
-+                <button
-+                  onClick={() => handleSendMessage(uiText[language].suggestion1, null)}
-+                  disabled={isLoading}
-+                  className="bg-white/80 border border-gray-300/80 rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-200/60 transition-colors disabled:opacity-50"
-+                >
-+                  {uiText[language].suggestion1}
-+                </button>
-+                <button
-+                  onClick={() => handleSendMessage(uiText[language].suggestion2, null)}
-+                  disabled={isLoading}
-+                  className="bg-white/80 border border-gray-300/80 rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-200/60 transition-colors disabled:opacity-50"
-+                >
-+                  {uiText[language].suggestion2}
-+                </button>
-+                <button
-+                  onClick={() => handleSendMessage(uiText[language].suggestion3, null)}
-+                  disabled={isLoading}
-+                  className="bg-white/80 border border-gray-300/80 rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-200/60 transition-colors disabled:opacity-50"
-+                >
-+                  {uiText[language].suggestion3}
-+                </button>
-+              </div>
-+            </div>
-+          )}
-+
-+          <div className="space-y-6">
-+            {chatHistory.map((msg) => (
-+              <ChatMessage key={msg.id} message={msg} />
-+            ))}
-+            <div ref={chatEndRef} />
-+          </div>
-+        </div>
-+      </main>
-+
-+      {/* Footer - fixed at bottom */}
-+      <footer className="flex-shrink-0 bg-white/70 backdrop-blur-lg border-t border-black/10">
-+        <div className="max-w-3xl mx-auto p-4">
-+          <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-+        </div>
-+      </footer>
-+    </div>
+      {/* Header: flex-shrink-0 ensures it takes its natural height and doesn't shrink */}
+      <header className="flex-shrink-0 bg-white/70 backdrop-blur-lg z-10 border-b border-black/10">
+        <div className="max-w-3xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <LogoIcon className="w-8 h-8" />
+              <h1 className="text-2xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-black to-gray-700">
+                BurmaFoodie
+              </h1>
+            </div>
+            {/* Language Switcher and Clear History */}
+            <div className="flex items-center space-x-4">
+              {chatHistory.length > 0 && (
+                <button 
+                  onClick={handleClearHistory}
+                  className="text-xs text-gray-500 hover:text-red-600 transition-colors px-3 py-1 rounded-md bg-gray-200/50 hover:bg-red-100/80"
+                  title="Clear chat history"
+                >
+                  {uiText[language].clearHistory}
+                </button>
+              )}
+              <LanguageSwitcher language={language} setLanguage={setLanguage} />
+            </div>
+          </div>
+        </div>
+      </header>
+      
+      {/* Main content area:
+          - flex-1 makes it grow to fill all available vertical space.
+          - overflow-y-auto makes it scroll if content exceeds its height.
+          - pt-4 pb-4 provides general top and bottom padding for the scrollable content.
+      */}
+      <main className="flex-1 overflow-y-auto pt-4 pb-4"> 
+        <div className="max-w-3xl w-full mx-auto px-4">
+            
+           {chatHistory.length === 0 && (
+           // Initial greeting display when chat history is empty
+           // min-h-[calc(100vh-theme('spacing.20')*2)] approximates screen height minus header/footer height
+           <div className="flex flex-col items-center justify-center text-center h-full min-h-[calc(100vh-160px)] animate-fadeInUp">
+                <div className="text-gray-600 w-full">
+                    <LogoIcon className="w-12 h-12 inline-block mb-4" />
+                    <p className="text-2xl font-bold text-gray-800">{uiText[language].welcome}</p>
+                    <p className="mt-2 text-sm max-w-sm mx-auto">{uiText[language].subtext}</p>
+                </div>
+
+                <div className="mt-8 flex flex-wrap justify-center gap-3 px-4">
+                    <button
+                        onClick={() => handleSendMessage(uiText[language].suggestion1, null)}
+                        disabled={isLoading}
+                        className="bg-white/80 border border-gray-300/80 rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-200/60 transition-colors disabled:opacity-50"
+                    >
+                        {uiText[language].suggestion1}
+                    </button>
+                    <button
+                        onClick={() => handleSendMessage(uiText[language].suggestion2, null)}
+                        disabled={isLoading}
+                        className="bg-white/80 border border-gray-300/80 rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-200/60 transition-colors disabled:opacity-50"
+                    >
+                        {uiText[language].suggestion2}
+                    </button>
+                    <button
+                        onClick={() => handleSendMessage(uiText[language].suggestion3, null)}
+                        disabled={isLoading}
+                        className="bg-white/80 border border-gray-300/80 rounded-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-200/60 transition-colors disabled:opacity-50"
+                    >
+                        {uiText[language].suggestion3}
+                    </button>
+                </div>
+            </div>
+           )}
+
+           {/* Chat messages */}
+           <div className="space-y-6">
+             {chatHistory.map((msg) => (
+               <ChatMessage key={msg.id} message={msg} />
+             ))}
+             {/* Ref for scrolling to the end */}
+             <div ref={chatEndRef} />
+           </div>
+         </div>
+       </main>
+
+      {/* Footer: flex-shrink-0 ensures it takes its natural height and doesn't shrink */}
+       <footer className="flex-shrink-0 bg-white/70 backdrop-blur-lg border-t border-black/10">
+         <div className="max-w-3xl mx-auto p-4">
+           <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+         </div>
+       </footer>
+     </div>
    );
  };
 
