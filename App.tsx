@@ -156,7 +156,7 @@ const App: React.FC = () => {
         </div>
       </header>
       
-      <main className="flex-1 overflow-y-auto pt-40 pb-40">
+      <main className="flex-1 overflow-y-auto pt-40 pb-[calc(theme('spacing.20')+theme('spacing.8'))]">
         <div className="max-w-3xl w-full mx-auto px-4 pt-6 pb-8 relative flex-1 h-full">
            
            {chatHistory.length === 0 && (
