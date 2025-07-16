@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChatMessage as ChatMessageType, Recipe, GeminiResponse, Greeting } from './types'; // Make sure GeminiResponse and Greeting are imported
+import { ChatMessage as ChatMessageType, Recipe, GeminiResponse, Greeting } from './types';
 import { getRecipeForDish } from './services/geminiService';
 import ChatInput from './components/ChatInput';
 import ChatMessage from './components/ChatMessage';
@@ -28,6 +28,7 @@ const App: React.FC = () => {
   }, [chatHistory]);
 
   useEffect(() => {
+    // Save history without images to save space
     const historyToSave = chatHistory.map(msg => {
       const { image, ...rest } = msg;
       return rest;
@@ -58,7 +59,6 @@ const App: React.FC = () => {
     };
     setChatHistory(prev => [...prev, modelLoadingMessage]);
 
-    // This prompt logic can remain the same
     let prompt;
     if (imageBase64) {
       if (inputText.trim()) {
@@ -67,14 +67,13 @@ const App: React.FC = () => {
         prompt = "Analyze the attached image and provide the recipe for the Burmese dish shown. Identify the language from any visible text or typical context and respond in that language (Burmese or English).";
       }
     } else {
-      prompt = inputText; // Just send the raw text for greetings
+      prompt = inputText;
     }
     
-    const result = await getRecipeForDish(prompt, imageBase64);
+    const result: GeminiResponse = await getRecipeForDish(prompt, imageBase64);
 
     let finalModelMessage: ChatMessageType;
 
-    // ===== START: Updated Response Handling Logic =====
     if ('greeting' in result) {
        finalModelMessage = {
           id: modelLoadingMessageId,
@@ -96,7 +95,6 @@ const App: React.FC = () => {
           recipe: result as Recipe
       };
     }
-    // ===== END: Updated Response Handling Logic =====
 
     setChatHistory(prev => prev.map(msg => msg.id === modelLoadingMessageId ? finalModelMessage : msg));
     setIsLoading(false);
@@ -107,9 +105,11 @@ const App: React.FC = () => {
     localStorage.removeItem('chatHistory');
   };
 
+  // ===== Updated the main container to use h-screen for full height =====
   return (
-    <div className="bg-gradient-to-br from-gray-50 to-gray-200 text-black min-h-screen flex flex-col font-sans">
-      <header className="fixed top-0 left-0 right-0 bg-white/70 backdrop-blur-lg z-10 border-b border-black/10">
+    <div className="bg-gradient-to-br from-gray-50 to-gray-200 text-black h-screen flex flex-col font-sans">
+      {/* ===== Removed `fixed` class so it's part of the layout flow ===== */}
+      <header className="bg-white/70 backdrop-blur-lg z-10 border-b border-black/10">
         <div className="max-w-3xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -131,10 +131,11 @@ const App: React.FC = () => {
         </div>
       </header>
       
-      <main className="flex-1 flex flex-col pt-24 pb-32 md:pb-36">
-        <div className="max-w-3xl w-full mx-auto px-4 flex-1 overflow-y-auto relative">
+      {/* ===== Main area now grows to fill space and scrolls internally ===== */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl w-full mx-auto px-4 pt-6 pb-8 relative flex-1">
            {chatHistory.length === 0 && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-gray-600 animate-fadeInUp pointer-events-none">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-gray-600 animate-fadeInUp pointer-events-none -top-16">
                 <div>
                     <p className="text-lg">Welcome to BurmaFoodie!</p>
                     <p className="mt-2 text-sm max-w-sm">Type a Burmese dish name (e.g., "မုန့်ဟင်းခါး" or "Mohinga") or upload a photo to get a recipe.</p>
@@ -150,7 +151,8 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/70 backdrop-blur-lg border-t border-black/10">
+      {/* ===== Removed `fixed` class so it's part of the layout flow ===== */}
+      <footer className="bg-white/70 backdrop-blur-lg border-t border-black/10">
         <div className="max-w-3xl mx-auto p-4">
           <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
         </div>
