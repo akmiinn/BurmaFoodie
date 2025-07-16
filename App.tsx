@@ -172,7 +172,7 @@ const App: React.FC = () => {
           - overflow-y-auto makes it scroll if content exceeds its height.
           - pt-4 pb-4 provides general top and bottom padding for the scrollable content.
       */}
-      <main className="flex-1 overflow-y-auto pt-40 pb-4"> 
+      <main className="flex-1 overflow-y-auto pt-40 pb-20"> 
         <div className="max-w-3xl w-full mx-auto px-4">
             
            {chatHistory.length === 0 && (
