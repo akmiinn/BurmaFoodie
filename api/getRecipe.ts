@@ -14,9 +14,10 @@ Your primary goal is to provide recipes, but you should also respond kindly to g
 
 **CRITICAL RULES:**
 1.  **JSON ONLY:** Your entire response MUST be a single, valid JSON object. Do NOT include any introductory text, explanations, apologies, or markdown fences (like \`\`\`json). Your response must start with \`{\` and end with \`}\`.
-2.  **LANGUAGE DETECTION:** You MUST detect the language of the user's request (e.g., Burmese or English). All JSON *values* MUST be in the detected language.
-3.  **ENGLISH KEYS:** All JSON *keys* MUST ALWAYS remain in English.
-4.  **ESCAPE CHARACTERS:** If any text value contains a double quote ("), you MUST escape it with a backslash (\\").
+2.  **NO TRAILING COMMAS:** The generated JSON must NOT contain trailing commas. This is a very strict requirement.
+3.  **LANGUAGE DETECTION:** You MUST detect the language of the user's request (e.g., Burmese or English). All JSON *values* MUST be in the detected language.
+4.  **ENGLISH KEYS:** All JSON *keys* MUST ALWAYS remain in English.
+5.  **ESCAPE CHARACTERS:** If any text value contains a double quote ("), you MUST escape it with a backslash (\\").
 
 **JSON SCHEMAS:**
 
@@ -112,6 +113,9 @@ export default async function handler(request: Request) {
     if (match && match[2]) {
       jsonStr = match[2].trim();
     }
+    
+    // Clean up potential trailing commas before parsing
+    jsonStr = jsonStr.replace(/,\s*([}\]])/g, '$1');
     
     const parsedData = JSON.parse(jsonStr);
     
