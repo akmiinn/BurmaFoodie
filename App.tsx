@@ -102,8 +102,8 @@ const App: React.FC = () => {
     <div className="bg-gradient-to-br from-gray-50 to-gray-200 text-black min-h-screen flex flex-col font-sans">
       <header className="fixed top-0 left-0 right-0 bg-white/70 backdrop-blur-lg z-10 border-b border-black/10">
         <div className="max-w-3xl mx-auto px-4 py-3">
-          <div className="fixed items-center justify-between">
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-between">
+            <div className="fixed items-center space-x-3">
               <LogoIcon className="w-8 h-8" />
               <h1 className="text-2xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-black to-gray-700">
                 BurmaFoodie
