@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChatMessage as ChatMessageType, Recipe } from './types';
+import { ChatMessage as ChatMessageType, Recipe, GeminiResponse, Greeting } from './types'; // Make sure GeminiResponse and Greeting are imported
 import { getRecipeForDish } from './services/geminiService';
 import ChatInput from './components/ChatInput';
 import ChatMessage from './components/ChatMessage';
@@ -58,6 +58,7 @@ const App: React.FC = () => {
     };
     setChatHistory(prev => [...prev, modelLoadingMessage]);
 
+    // This prompt logic can remain the same
     let prompt;
     if (imageBase64) {
       if (inputText.trim()) {
@@ -66,14 +67,21 @@ const App: React.FC = () => {
         prompt = "Analyze the attached image and provide the recipe for the Burmese dish shown. Identify the language from any visible text or typical context and respond in that language (Burmese or English).";
       }
     } else {
-      prompt = `Provide the recipe for: ${inputText}`;
+      prompt = inputText; // Just send the raw text for greetings
     }
     
     const result = await getRecipeForDish(prompt, imageBase64);
 
     let finalModelMessage: ChatMessageType;
 
-    if ('error' in result) {
+    // ===== START: Updated Response Handling Logic =====
+    if ('greeting' in result) {
+       finalModelMessage = {
+          id: modelLoadingMessageId,
+          role: 'model',
+          text: (result as Greeting).greeting,
+       };
+    } else if ('error' in result) {
        finalModelMessage = {
           id: modelLoadingMessageId,
           role: 'model',
@@ -84,10 +92,11 @@ const App: React.FC = () => {
       finalModelMessage = {
           id: modelLoadingMessageId,
           role: 'model',
-          text: `Here is the recipe for ${result.dishName}.`,
+          text: `Here is the recipe for ${(result as Recipe).dishName}.`,
           recipe: result as Recipe
       };
     }
+    // ===== END: Updated Response Handling Logic =====
 
     setChatHistory(prev => prev.map(msg => msg.id === modelLoadingMessageId ? finalModelMessage : msg));
     setIsLoading(false);
@@ -125,7 +134,7 @@ const App: React.FC = () => {
       <main className="flex-1 flex flex-col pt-24 pb-32 md:pb-36">
         <div className="max-w-3xl w-full mx-auto px-4 flex-1 overflow-y-auto">
            {chatHistory.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-center text-gray-600 animate-fadeInUp">
+            <div className="fixed flex-col items-center justify-center h-full text-center text-gray-600 animate-fadeInUp">
                 <p className="text-lg">Welcome to BurmaFoodie!</p>
                 <p className="mt-2 text-sm max-w-sm">Type a Burmese dish name (e.g., "မုန့်ဟင်းခါး" or "Mohinga") or upload a photo to get a recipe.</p>
             </div>
