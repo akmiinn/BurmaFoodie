@@ -134,7 +134,7 @@ const App: React.FC = () => {
       <main className="flex-1 flex flex-col pt-24 pb-32 md:pb-36">
         <div className="max-w-3xl w-full mx-auto px-4 flex-1 overflow-y-auto">
            {chatHistory.length === 0 && (
-            <div className="fixed flex-col items-center justify-center h-full text-center text-gray-600 animate-fadeInUp">
+            <div className="flex flex-col items-center justify-center h-full text-center text-gray-600 animate-fadeInUp">
                 <p className="text-lg">Welcome to BurmaFoodie!</p>
                 <p className="mt-2 text-sm max-w-sm">Type a Burmese dish name (e.g., "မုန့်ဟင်းခါး" or "Mohinga") or upload a photo to get a recipe.</p>
             </div>
