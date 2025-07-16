@@ -1,4 +1,3 @@
-
 export interface Ingredient {
   name: string;
   amount: string;
@@ -15,7 +14,13 @@ export interface RecipeError {
     error: string;
 }
 
-export type GeminiResponse = Recipe | RecipeError;
+// --- ADD THIS ---
+export interface Greeting {
+    greeting: string;
+}
+
+// --- AND MODIFY THIS LINE ---
+export type GeminiResponse = Recipe | RecipeError | Greeting;
 
 export interface ChatMessage {
   id: string;
